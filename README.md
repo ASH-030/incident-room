@@ -25,6 +25,38 @@ flowchart LR
 
 The hosted installation currently creates repair branches on its server. Authenticated automatic push/PR publication is a separate repository-access configuration; publishing this source does not grant the running agent GitHub credentials.
 
+## How we use Switch
+
+**Connected agent:** one custom Python agent named `incident-room`, powered by the OpenAI Responses API with function calling. It connects through Switch's custom agent protocol using our standalone WebSocket adapter. Codex helped build the software; it is not the agent connected to this room.
+
+**Chat platform and channel:** the self-hosted official Switch 0.31.0 stack bridges a private Mattermost **Incident Room** channel to a Switch room. The room contains the custom agent and two human participants: finance and engineering. Switch Console can access the same room. Slack, Teams, Discord and Telegram are not configured in this deployment.
+
+**Shared work:** finance opens a discrepancy and confirms the business definition. The agent executes bounded read-only BigQuery queries, inspects the allowed SQL transforms and proposes an evidence-backed correction. The server tests the exact SQL in isolated clones. Finance and engineering approve the same proposal; engineering publishes the verified Git branch. The dashboard and room commands share the API, incident state and audit history. The chat workflow depends on Switch for room addressing and message delivery; the dashboard also exposes the underlying investigation API.
+
+**Authority:** each reviewer signs in with their own invited Google account once. The operator binds the actual opaque Switch sender IDs to those memberships. Room membership and a display name alone do not grant approval rights. Ordinary chat is not approval.
+
+To reproduce the channel connection:
+
+1. Complete the real BigQuery/OpenAI configuration in [SETUP.md](docs/SETUP.md) and invite the two reviewers using [Google sign-in setup](docs/GOOGLE-SIGN-IN.md).
+2. Start the official Switch full stack with its Mattermost bridge. Create a private room, add both chat users and create a temporary registration key in Gateway.
+3. From this repository, run `uv run python -m incident_room.register_switch`. Supply the server URL, the name `incident-room` and registration key. Keep the returned agent key private, invite that agent to the room and allow the intended participants to address it. Revoke the one-time registration key after setup.
+4. Set `SWITCH_BASE_URL`, `SWITCH_AGENT_ID`, `SWITCH_API_KEY`, `SWITCH_ROOM_ID` and a private `SWITCH_ADAPTER_TOKEN` in the ignored `.env`. Bind each actual sender to the invited account with `uv run python -m incident_room.manage_users bind-switch "OPAQUE_SENDER" "INVITED_EMAIL"`.
+5. Start the application using the instructions below, then run `uv run python -m incident_room.switch_adapter` separately. In Mattermost, mention `@incident-room` with each command.
+
+| Command | Role and effect |
+| --- | --- |
+| `!open <report>` | Either reviewer opens an incident in this room. |
+| `!definition <meaning>` | Finance confirms the metric contract. |
+| `!context <fact>` | Either reviewer supplies context; previous approvals are invalidated. |
+| `!evidence` | Start the investigation and isolated patch verification. |
+| `!status` | Read progress, clarification, proposal digest or published branch. |
+| `!approve <full digest>` | Each reviewer independently approves the exact tested patch. |
+| `!repair` | Engineering repeats validation and publishes the verified branch. |
+
+Start the incident in chat to show the same case in both surfaces. An incident opened only in the dashboard has no room association. The current host publishes a server-side Git branch; automatic GitHub PR creation needs separately configured repository credentials. Production SQL deployment is a separate step.
+
+See the [presentation walkthrough](docs/PRESENTATION.md) and [under-three-minute recording plan](docs/DEMO-RECORDING.md). A public or unlisted demo-video URL will be added after the actual team workflow is recorded.
+
 ## Run it
 
 Start with [the setup guide](docs/SETUP.md). It covers Google credentials and permissions, your real SQL repository and assertions, local OpenAI configuration, and Switch installation and agent registration.
