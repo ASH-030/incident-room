@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: incident
+      POSTGRES_DB: incident
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes: ["room-db:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U incident"]
+      interval: 5s
+      retries: 10
+  api:
+    image: incident-room-api:1.0.0
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://incident:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db/incident
+      ROOM_DATA_DIR: /app/runtime
+      PROJECT_CONFIG: /etc/incident-room/project.json
+    volumes:
+      - ./runtime:/app/runtime
+      - ./config/project.container.json:/etc/incident-room/project.json:ro
+      - ${WAREHOUSE_REPO_PATH:?Set WAREHOUSE_REPO_PATH}:/workspace/retail-warehouse
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8400/api/health',timeout=5)"]
+      interval: 15s
+      timeout: 6s
+      retries: 10
+    stop_grace_period: 40s
+  web:
+    image: incident-room-web:1.0.0
+    build: ./frontend
+    restart: unless-stopped
+    ports: ["127.0.0.1:${ROOM_WEB_PORT:-3000}:3000"]
+    environment:
+      ROOM_API_URL: http://api:8400
+    depends_on:
+      api:
+        condition: service_healthy
+  adapter:
+    image: incident-room-api:1.0.0
+    build: .
+    profiles: [switch]
+    restart: "no"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg://incident:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@db/incident
+      ROOM_DATA_DIR: /app/runtime
+      ROOM_API_URL: http://api:8400
+    command: ["python", "-m", "incident_room.switch_adapter"]
+    volumes: ["./runtime:/app/runtime"]
+    depends_on:
+      api:
+        condition: service_healthy
+    extra_hosts: ["host.docker.internal:host-gateway"]
+volumes:
+  room-db:

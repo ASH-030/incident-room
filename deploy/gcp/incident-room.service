@@ -1,0 +1,16 @@
+[Unit]
+Description=Incident Room and Switch persistent services
+Wants=network-online.target
+After=network-online.target docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/bin/bash /opt/incident-room/deploy/gcp/start-stack.sh
+ExecStop=/usr/bin/docker compose --project-directory /opt/incident-room -p incident-room -f /opt/incident-room/compose.yaml -f /opt/incident-room/compose.cloud.yaml --profile switch stop
+TimeoutStartSec=300
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

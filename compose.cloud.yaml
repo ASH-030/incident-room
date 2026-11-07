@@ -1,0 +1,9 @@
+services:
+  api:
+    image: ${API_IMAGE:?Set the verified Artifact Registry image}
+    ports: ["${VM_INTERNAL_IP:?Set VM_INTERNAL_IP}:8400:8400"]
+    environment:
+      APP_ENV: production
+      ALLOW_REVIEWER_TOKENS: "false"
+  adapter:
+    image: ${API_IMAGE:?Set the verified Artifact Registry image}

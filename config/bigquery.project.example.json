@@ -1,0 +1,20 @@
+{
+  "name": "REPLACE_WITH_YOUR_DATA_PROJECT_NAME",
+  "billing_project": "your-validation-project",
+  "location": "US",
+  "scratch_prefix": "incident_room_",
+  "project_root": "D:/path/to/your-existing-sql-git-repository",
+  "tables": ["your-source-project.your_dataset.your_source_table", "your-source-project.your_dataset.your_output_table"],
+  "transforms": ["models/your_transform.sql"],
+  "outputs": {"models/your_transform.sql": "your-source-project.your_dataset.your_output_table"},
+  "assertions": [
+    {"name": "REPLACE_WITH_A_REAL_BUSINESS_INVARIANT", "sql": "REPLACE_WITH_SELECT_RETURNING_ONLY_VIOLATING_ROWS"}
+  ],
+  "metrics": [
+    {"name": "REPLACE_WITH_YOUR_METRIC", "sql": "REPLACE_WITH_SELECT_RETURNING_ONE_NUMERIC_SCALAR", "minimum": null, "maximum": null}
+  ],
+  "datahub_urns": [],
+  "publish_pr": false,
+  "maximum_bytes_billed": 1000000000,
+  "query_timeout_seconds": 60
+}

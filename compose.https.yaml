@@ -1,0 +1,21 @@
+services:
+  api:
+    environment:
+      APP_ENV: production
+      ALLOW_REVIEWER_TOKENS: "false"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?Create the Google Web application client}
+      APP_ORIGINS: https://${APP_DOMAIN:?Set your DNS hostname}
+  proxy:
+    image: caddy:2.11-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set your DNS hostname}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on: [web]
+volumes:
+  caddy-data:
+  caddy-config:

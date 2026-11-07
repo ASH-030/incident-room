@@ -1,0 +1,12 @@
+.venv
+runtime
+.env
+.git
+.pytest_cache
+**/__pycache__
+frontend/node_modules
+frontend/.next
+.uv-cache
+config/project.local.json
+config/project.container.json
+.env.*

@@ -1,0 +1,9 @@
+[Unit]
+Description=Back up Incident Room, Switch databases and SQL Git history
+After=docker.service incident-room.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/incident-room/deploy/gcp/backup-stack.sh
+TimeoutStartSec=300

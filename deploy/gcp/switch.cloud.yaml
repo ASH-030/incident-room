@@ -1,0 +1,21 @@
+services:
+  setup:
+    # Provision explicitly once; the upstream 0.31.0 seeder retries public
+    # user creation, which correctly fails after open signups are disabled.
+    profiles: !override [bootstrap]
+    restart: "no"
+  postgres:
+    ports: !reset []
+  switch:
+    restart: unless-stopped
+    environment:
+      GATEWAY_SIGNUP_ENABLED: "false"
+      ID_SERVER_NAME: incident-room
+      MATRIX_SERVER_NAME: incident-room
+  gateway:
+    restart: unless-stopped
+  mattermost:
+    restart: unless-stopped
+    environment:
+      MM_SERVICESETTINGS_SITEURL: ${MESSAGING_PUBLIC_URL:?Set the chat HTTPS URL}
+      MM_TEAMSETTINGS_ENABLEOPENSERVER: "false"
